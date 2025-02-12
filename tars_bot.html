@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TARS Bot - A Doubt Solving AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@400;500;700&family=Host+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css">
+    <style>
+        body {
+            font-family: 'Host Grotesk', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 10px;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 700px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            font-family: 'Wix Madefor Display', sans-serif;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 700;
+            background-color: #3a3a3a;
+            color: white;
+            padding: 15px;
+            margin-bottom: 5px;
+        }
+        .sub-header {
+            font-size: 10px;
+            color: #d3d3d3;
+            text-align: right;
+            padding: 5px;
+        }
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #3a3a3a;
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #e9ecef;
+            color: black;
+            align-self: flex-start;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: white;
+            color: black;
+            border: none;
+            padding: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .input-container {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            background: white;
+        }
+        .input-container input {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            font-size: 16px;
+        }
+        .input-container button {
+            padding: 12px 15px;
+            margin-left: 5px;
+            background-color: #3a3a3a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">TARS Bot - A Doubt Solving AI</div>
+        <div class="sub-header">Powered by Tenso</div>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask me anything about studies..." />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "your_api_key_here";
+
+        function detectGreeting(query) {
+            const greetings = ["hi", "hello", "hey", "good morning", "good evening"];
+            return greetings.includes(query.toLowerCase());
+        }
+
+        async function sendMessage() {
+            let userInput = document.getElementById("userInput").value.trim();
+            if (!userInput) return;
+
+            let chatBox = document.getElementById("chatBox");
+            let userMessage = document.createElement("div");
+            userMessage.className = "message user-message";
+            userMessage.innerText = userInput;
+            chatBox.appendChild(userMessage);
+            document.getElementById("userInput").value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (detectGreeting(userInput)) {
+                displayBotMessage("Hello! How can I assist you with your studies today?");
+                return;
+            }
+
+            let model = "mistralai/Mixtral-8x7B-Instruct-v0.1";
+            let refinedPrompt = `Strictly academic responses only. Follow user instructions.\nUser Query: ${userInput}`;
+
+            try {
+                let response = await fetch("https://api.together.ai/v1/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        prompt: refinedPrompt,
+                        max_tokens: 500,
+                        temperature: 0.7
+                    })
+                });
+
+                let data = await response.json();
+                let botReply = data.choices[0].text.trim();
+                displayBotMessage(botReply);
+            } catch (error) {
+                displayBotMessage("Error: Unable to fetch response.");
+            }
+        }
+
+        function displayBotMessage(message) {
+            let chatBox = document.getElementById("chatBox");
+            let botMessage = document.createElement("div");
+            botMessage.className = "message bot-message";
+            botMessage.innerHTML = marked.parse(message);
+            chatBox.appendChild(botMessage);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
